@@ -18,10 +18,14 @@ export default function MenuItemCard({ item, onUpdate }: MenuItemCardProps) {
   const handleDelete = async () => {
     if (confirm("Are you sure you want to delete this item?")) {
       try {
-        await supabase.from("menu_items").delete().eq("id", item.id)
+        console.log("[v0] Deleting menu item:", item.id)
+        const { error } = await supabase.from("menu_items").delete().eq("id", item.id)
+        if (error) throw error
+        console.log("[v0] Item deleted successfully")
         onUpdate()
       } catch (error) {
-        console.error("Error deleting item:", error)
+        console.error("[v0] Error deleting item:", error)
+        alert("Failed to delete item")
       }
     }
   }
@@ -38,6 +42,7 @@ export default function MenuItemCard({ item, onUpdate }: MenuItemCardProps) {
         )}
         <h3 className="font-semibold text-gray-900">{item.name}</h3>
         {item.description && <p className="text-sm text-gray-600 line-clamp-2 mt-1">{item.description}</p>}
+        <div className="text-xs text-gray-500 mt-1">{item.category}</div>
         <div className="flex justify-between items-center mt-4">
           <span className="text-lg font-bold text-blue-600">₹{item.price.toFixed(2)}</span>
           <Button variant="ghost" size="sm" onClick={handleDelete} className="text-red-600 hover:bg-red-50">

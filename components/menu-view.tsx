@@ -15,9 +15,12 @@ interface MenuViewProps {
 
 export default function MenuView({ restaurant, items, isPremium }: MenuViewProps) {
   const [cart, setCart] = useState<Map<string, number>>(new Map())
+  const [showCart, setShowCart] = useState(false)
 
   const addToCart = (itemId: string) => {
-    setCart(new Map(cart).set(itemId, (cart.get(itemId) || 0) + 1))
+    const newCart = new Map(cart)
+    newCart.set(itemId, (newCart.get(itemId) || 0) + 1)
+    setCart(newCart)
   }
 
   const removeFromCart = (itemId: string) => {
@@ -31,19 +34,28 @@ export default function MenuView({ restaurant, items, isPremium }: MenuViewProps
     setCart(newCart)
   }
 
+  const cartCount = Array.from(cart.values()).reduce((a, b) => a + b, 0)
   const categories = Array.from(new Set(items.map((item) => item.category)))
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 pb-32">
       <div className="bg-white border-b sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-4 py-6">
-          <h1 className="text-3xl font-bold text-gray-900">{restaurant.name}</h1>
-          {restaurant.logo_url && (
-            <img
-              src={restaurant.logo_url || "/placeholder.svg"}
-              alt={restaurant.name}
-              className="w-20 h-20 mt-4 rounded-lg object-cover"
-            />
+        <div className="max-w-4xl mx-auto px-4 py-6 flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">{restaurant.name}</h1>
+            {restaurant.logo_url && (
+              <img
+                src={restaurant.logo_url || "/placeholder.svg"}
+                alt={restaurant.name}
+                className="w-20 h-20 mt-4 rounded-lg object-cover"
+              />
+            )}
+          </div>
+          {isPremium && cartCount > 0 && (
+            <Button onClick={() => setShowCart(!showCart)} className="gap-2">
+              <ShoppingCart className="w-4 h-4" />
+              Cart ({cartCount})
+            </Button>
           )}
         </div>
       </div>
@@ -72,10 +84,26 @@ export default function MenuView({ restaurant, items, isPremium }: MenuViewProps
                       <div className="flex justify-between items-center mt-4">
                         <span className="text-xl font-bold text-blue-600">₹{item.price.toFixed(2)}</span>
                         {isPremium && (
-                          <Button size="sm" onClick={() => addToCart(item.id)} className="gap-2">
-                            <ShoppingCart className="w-4 h-4" />
-                            Add
-                          </Button>
+                          <div className="flex gap-2">
+                            {cart.get(item.id) ? (
+                              <>
+                                <Button size="sm" variant="outline" onClick={() => removeFromCart(item.id)}>
+                                  -
+                                </Button>
+                                <Button size="sm" variant="outline" disabled>
+                                  {cart.get(item.id)}
+                                </Button>
+                                <Button size="sm" onClick={() => addToCart(item.id)}>
+                                  +
+                                </Button>
+                              </>
+                            ) : (
+                              <Button size="sm" onClick={() => addToCart(item.id)} className="gap-2">
+                                <ShoppingCart className="w-4 h-4" />
+                                Add
+                              </Button>
+                            )}
+                          </div>
                         )}
                       </div>
                     </CardContent>
@@ -86,7 +114,9 @@ export default function MenuView({ restaurant, items, isPremium }: MenuViewProps
         ))}
       </div>
 
-      {isPremium && cart.size > 0 && <CartSummary cart={cart} items={items} restaurantId={restaurant.id} />}
+      {isPremium && showCart && cart.size > 0 && (
+        <CartSummary cart={cart} items={items} restaurantId={restaurant.id} onClose={() => setShowCart(false)} />
+      )}
     </div>
   )
 }
